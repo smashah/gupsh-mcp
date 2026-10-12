@@ -85,7 +85,7 @@
   "tools": [
     {
       "name": "get_subscriber",
-      "description": "Look up a gupsh subscriber by email or UUID."
+      "description": "Look up a Bento subscriber by email or UUID."
     },
     {
       "name": "batch_import_subscribers",
@@ -93,7 +93,7 @@
     },
     {
       "name": "list_tags",
-      "description": "List all tags in the gupsh site."
+      "description": "List all tags in the Bento site."
     },
     {
       "name": "create_tag",
@@ -113,7 +113,7 @@
     },
     {
       "name": "get_site_stats",
-      "description": "Retrieve aggregate stats for the gupsh site."
+      "description": "Retrieve aggregate stats for the Bento site."
     },
     {
       "name": "get_ads_stats",
