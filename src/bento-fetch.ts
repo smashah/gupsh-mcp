@@ -1,35 +1,37 @@
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const packageJson = require("../package.json");
+
+export const DEFAULT_BASE_URL = "https://api.gupsh.app/api/v1";
+
+export function cred(name: "PUBLISHABLE_KEY" | "SECRET_KEY" | "SITE_UUID"): string | undefined {
+  return process.env[`GUPSH_${name}`] ?? process.env[`BENTO_${name}`];
+}
+
 export function getApiBaseUrl(): string {
-  const rawBaseUrl =
-    process.env.BENTO_API_BASE_URL || "https://app.bentonow.com/api/v1";
-
+  const raw = process.env.GUPSH_API_BASE_URL || process.env.BENTO_API_BASE_URL || DEFAULT_BASE_URL;
+  let url: URL;
   try {
-    const parsed = new URL(rawBaseUrl);
-    const isLocalHost =
-      parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-    const isBentoHost =
-      parsed.hostname.endsWith(".bentonow.com") || parsed.hostname === "bentonow.com";
-    const hasAllowedProtocol =
-      parsed.protocol === "https:" || (isLocalHost && parsed.protocol === "http:");
-
-    if (!hasAllowedProtocol || (!isLocalHost && !isBentoHost)) {
-      throw new Error("Invalid BENTO_API_BASE_URL host");
-    }
-
-    return parsed.toString().replace(/\/$/, "");
+    url = new URL(raw);
   } catch {
-    throw new Error(
-      "Invalid BENTO_API_BASE_URL. Use https://*.bentonow.com (or http://localhost for local development).",
-    );
+    throw new Error(`Invalid API base URL: ${raw}`);
   }
+  const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || url.hostname.endsWith(".localhost");
+  if (url.protocol !== "https:" && !(local && url.protocol === "http:")) {
+    throw new Error("API base URL must be https (http is allowed for localhost only)");
+  }
+  if (url.pathname === "/" || url.pathname === "") url.pathname = "/api/v1";
+  return url.toString().replace(/\/$/, "");
 }
 
 export async function fetchBentoJson(
   path: string,
   query: Record<string, string> = {},
 ): Promise<unknown> {
-  const publishableKey = process.env.BENTO_PUBLISHABLE_KEY;
-  const secretKey = process.env.BENTO_SECRET_KEY;
-  const siteUuid = process.env.BENTO_SITE_UUID;
+  const publishableKey = cred("PUBLISHABLE_KEY");
+  const secretKey = cred("SECRET_KEY");
+  const siteUuid = cred("SITE_UUID");
 
   if (!publishableKey || !secretKey || !siteUuid) {
     throw new Error(
@@ -46,6 +48,7 @@ export async function fetchBentoJson(
     headers: {
       Authorization: `Basic ${authHeader}`,
       Accept: "application/json",
+      "User-Agent": `gupsh-mcp/${packageJson.version}`,
     },
   });
 

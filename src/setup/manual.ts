@@ -21,6 +21,7 @@ export function printManualConfig(creds: Credentials): void {
   console.log(`  BENTO_PUBLISHABLE_KEY=${creds.publishableKey}`);
   console.log(`  BENTO_SECRET_KEY=${creds.secretKey}`);
   console.log(`  BENTO_SITE_UUID=${creds.siteUuid}`);
+  console.log(`  BENTO_API_BASE_URL=${creds.apiBaseUrl}`);
 
   console.log("\n2. MCP Server Configuration");
   console.log("-".repeat(40));
@@ -28,13 +29,14 @@ export function printManualConfig(creds: Credentials): void {
   console.log(`
 {
   "mcpServers": {
-    "bento": {
+    "gupsh": {
       "command": "npx",
-      "args": ["-y", "@bentonow/bento-mcp"],
+      "args": ["-y", "@gupsh/mcp"],
       "env": {
         "BENTO_PUBLISHABLE_KEY": "${creds.publishableKey}",
         "BENTO_SECRET_KEY": "${creds.secretKey}",
-        "BENTO_SITE_UUID": "${creds.siteUuid}"
+        "BENTO_SITE_UUID": "${creds.siteUuid}",
+        "BENTO_API_BASE_URL": "${creds.apiBaseUrl}"
       }
     }
   }
@@ -46,7 +48,8 @@ export function printManualConfig(creds: Credentials): void {
   console.log(`  BENTO_PUBLISHABLE_KEY=${creds.publishableKey} \\`);
   console.log(`  BENTO_SECRET_KEY=${creds.secretKey} \\`);
   console.log(`  BENTO_SITE_UUID=${creds.siteUuid} \\`);
-  console.log("  npx @bentonow/bento-mcp");
+  console.log(`  BENTO_API_BASE_URL=${creds.apiBaseUrl} \\`);
+  console.log("  npx @gupsh/mcp");
 
   console.log(`\n${"=".repeat(60)}`);
 }
@@ -59,13 +62,14 @@ export function printConfigBlock(creds: Credentials): void {
     JSON.stringify(
       {
         mcpServers: {
-          bento: {
+          gupsh: {
             command: "npx",
-            args: ["-y", "@bentonow/bento-mcp"],
+            args: ["-y", "@gupsh/mcp"],
             env: {
               BENTO_PUBLISHABLE_KEY: creds.publishableKey,
               BENTO_SECRET_KEY: creds.secretKey,
               BENTO_SITE_UUID: creds.siteUuid,
+              BENTO_API_BASE_URL: creds.apiBaseUrl,
             },
           },
         },

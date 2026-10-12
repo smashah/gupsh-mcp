@@ -26,7 +26,7 @@ async function isClaudeCliAvailable(): Promise<boolean> {
  */
 async function removeExisting(): Promise<void> {
   return new Promise((resolve) => {
-    const proc = spawn("claude", ["mcp", "remove", "bento"], {
+    const proc = spawn("claude", ["mcp", "remove", "gupsh"], {
       stdio: ["ignore", "ignore", "ignore"],
       shell: true,
     });
@@ -36,7 +36,7 @@ async function removeExisting(): Promise<void> {
 }
 
 /**
- * Configure Bento MCP for Claude Code using the CLI.
+ * Configure gupsh MCP for Claude Code using the CLI.
  * This is the preferred method as it requires no file mutation.
  */
 export async function configure(
@@ -48,17 +48,19 @@ export async function configure(
   const args = [
     "mcp",
     "add",
-    "bento",
+    "gupsh",
     "--env",
     `BENTO_PUBLISHABLE_KEY=${creds.publishableKey}`,
     "--env",
     `BENTO_SECRET_KEY=${creds.secretKey}`,
     "--env",
     `BENTO_SITE_UUID=${creds.siteUuid}`,
+    "--env",
+    `BENTO_API_BASE_URL=${creds.apiBaseUrl}`,
     "--",
     "npx",
     "-y",
-    "@bentonow/bento-mcp",
+    "@gupsh/mcp",
   ];
 
   if (dryRun) {
@@ -76,7 +78,7 @@ export async function configure(
     return false;
   }
 
-  console.log("\n[Claude Code] Registering Bento MCP server...");
+  console.log("\n[Claude Code] Registering gupsh MCP server...");
 
   // Remove existing entry first to ensure clean update
   await removeExisting();
@@ -94,7 +96,7 @@ export async function configure(
 
     proc.on("close", (code) => {
       if (code === 0) {
-        console.log("  Successfully registered Bento MCP server.");
+        console.log("  Successfully registered gupsh MCP server.");
         resolve(true);
       } else {
         console.error(`  Command exited with code ${code}`);
@@ -108,9 +110,10 @@ export async function configure(
  * Get the command string for manual execution.
  */
 export function getCommand(creds: Credentials): string {
-  return `claude mcp add bento \\
+  return `claude mcp add gupsh \\
   --env BENTO_PUBLISHABLE_KEY=${creds.publishableKey} \\
   --env BENTO_SECRET_KEY=${creds.secretKey} \\
   --env BENTO_SITE_UUID=${creds.siteUuid} \\
-  -- npx -y @bentonow/bento-mcp`;
+  --env BENTO_API_BASE_URL=${creds.apiBaseUrl} \\
+  -- npx -y @gupsh/mcp`;
 }

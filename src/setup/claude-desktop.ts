@@ -51,7 +51,7 @@ async function backupConfig(configPath: string): Promise<string | null> {
 }
 
 /**
- * Get the Bento MCP server configuration block.
+ * Get the gupsh MCP server configuration block.
  */
 export function getBentoConfig(
   creds: Credentials,
@@ -60,11 +60,12 @@ export function getBentoConfig(
   if (writeSecrets) {
     return {
       command: "npx",
-      args: ["-y", "@bentonow/bento-mcp"],
+      args: ["-y", "@gupsh/mcp"],
       env: {
         BENTO_PUBLISHABLE_KEY: creds.publishableKey,
         BENTO_SECRET_KEY: creds.secretKey,
         BENTO_SITE_UUID: creds.siteUuid,
+        BENTO_API_BASE_URL: creds.apiBaseUrl,
       },
     };
   }
@@ -72,17 +73,18 @@ export function getBentoConfig(
   // Reference env vars (requires env file to be sourced)
   return {
     command: "npx",
-    args: ["-y", "@bentonow/bento-mcp"],
+    args: ["-y", "@gupsh/mcp"],
     env: {
       BENTO_PUBLISHABLE_KEY: "${BENTO_PUBLISHABLE_KEY}",
       BENTO_SECRET_KEY: "${BENTO_SECRET_KEY}",
       BENTO_SITE_UUID: "${BENTO_SITE_UUID}",
+      BENTO_API_BASE_URL: "${BENTO_API_BASE_URL}",
     },
   };
 }
 
 /**
- * Configure Bento MCP for Claude Desktop by merging into the config file.
+ * Configure gupsh MCP for Claude Desktop by merging into the config file.
  */
 export async function configure(
   creds: Credentials,
@@ -96,7 +98,7 @@ export async function configure(
   if (dryRun) {
     console.log("\n[Claude Desktop] Would modify:");
     console.log(`  ${configPath}`);
-    console.log("\n  Adding mcpServers.bento:");
+    console.log("\n  Adding mcpServers.gupsh:");
     console.log(
       `  ${JSON.stringify(bentoConfig, null, 2).split("\n").join("\n  ")}`,
     );
@@ -134,7 +136,7 @@ export async function configure(
     if (!config.mcpServers) {
       config.mcpServers = {};
     }
-    (config.mcpServers as Record<string, unknown>).bento = bentoConfig;
+    (config.mcpServers as Record<string, unknown>).gupsh = bentoConfig;
 
     // Write back
     await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
@@ -162,7 +164,7 @@ export function getConfigBlock(creds: Credentials): string {
   return JSON.stringify(
     {
       mcpServers: {
-        bento: bentoConfig,
+        gupsh: bentoConfig,
       },
     },
     null,

@@ -1,272 +1,47 @@
-# Bento MCP Server
+# gupsh MCP
 
-A Model Context Protocol (MCP) server for [Bento](https://bentonow.com) - the email marketing and analytics platform. This server enables AI assistants like Claude, Cursor, and others to interact with your Bento account.
+A local stdio MCP server for gupsh, forked from [Bento MCP](https://github.com/bentonow/bento-mcp) under the MIT license. It keeps the upstream 20 tool names, arguments, and response text so existing assistant workflows can point at gupsh.
 
-## Features
+## Start
 
-- **Subscriber Management** - Import, update, and lookup subscribers with full custom field support
-- **Tagging** - Create and manage tags
-- **Event Tracking** - Track custom events that can trigger automations
-- **Field Management** - Create and list custom fields
-- **Broadcasts** - Create and list email campaigns
-- **Automations** - View sequences and workflows
-- **Email Templates** - Read and update email template content
-- **Statistics** - Get site-level stats and ads attribution reports
+Run `npx -y @gupsh/mcp setup` to configure Claude Code, Claude Desktop, Cursor, or OpenCode. API keys are available in [gupsh Settings → API keys](https://app.gupsh.app/marketing/settings). The setup wizard stores credentials in `~/.gupsh/mcp/env` and offers a configurable API base URL.
 
-## Installation
+For a direct stdio configuration, set the environment variables yourself:
 
-```bash
-npm install -g @bentonow/bento-mcp
-```
+| Variable | Purpose |
+| --- | --- |
+| `BENTO_PUBLISHABLE_KEY` | Site publishable key |
+| `BENTO_SECRET_KEY` | Site secret key |
+| `BENTO_SITE_UUID` | Site UUID |
+| `BENTO_API_BASE_URL` | API base URL; defaults to `https://api.gupsh.app/api/v1` |
 
-Or run directly with npx:
-
-```bash
-npx @bentonow/bento-mcp
-```
-
-## Configuration
-
-The server requires three environment variables:
-
-| Variable | Description |
-|----------|-------------|
-| `BENTO_PUBLISHABLE_KEY` | Your Bento publishable API key |
-| `BENTO_SECRET_KEY` | Your Bento secret API key |
-| `BENTO_SITE_UUID` | Your Bento site UUID |
-
-You can find these in your [Bento account settings](https://app.bentonow.com).
-
-## Usage with Claude Desktop
-
-Add to your Claude Desktop configuration file:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+The server also accepts `GUPSH_PUBLISHABLE_KEY`, `GUPSH_SECRET_KEY`, `GUPSH_SITE_UUID`, and `GUPSH_API_BASE_URL` aliases, which take precedence over the matching `BENTO_*` variables. HTTPS is required for remote hosts; `http://localhost` and other loopback addresses are accepted for local development. A bare origin receives `/api/v1` automatically.
 
 ```json
 {
   "mcpServers": {
-    "bento": {
+    "gupsh": {
       "command": "npx",
-      "args": ["-y", "@bentonow/bento-mcp"],
+      "args": ["-y", "@gupsh/mcp"],
       "env": {
         "BENTO_PUBLISHABLE_KEY": "your-publishable-key",
         "BENTO_SECRET_KEY": "your-secret-key",
-        "BENTO_SITE_UUID": "your-site-uuid"
+        "BENTO_SITE_UUID": "your-site-uuid",
+        "BENTO_API_BASE_URL": "https://api.gupsh.app/api/v1"
       }
     }
   }
 }
 ```
 
-### Installing the `.mcpb` bundle in Claude Desktop
+For Claude Code, run `npx -y @gupsh/mcp setup --client claude-code`. For a local gupsh API, set `BENTO_API_BASE_URL=http://localhost:<api-port>/api/v1` before starting the server. The hosted alternative is `https://mcp.gupsh.app/mcp` and uses separate client configuration.
 
-Claude Desktop can also load the packaged bundle directly, so you don’t need to edit JSON by hand:
+## Tools
 
-1. Run `npm run build` (or `npm run bundle`, which aliases `build`). This compiles the server, syncs `manifest.json`, and creates `bento-mcp.mcpb` in the repo root.
-2. In Finder/Explorer, double-click `bento-mcp.mcpb` (or open Claude Desktop → Tools (hammer icon) → **Install Bundle** → **Choose File…** and select `bento-mcp.mcpb`).
-3. Claude will show the Bento MCP install dialog and prompt for the manifest’s user config fields:
-   - **Bento Publishable Key** → your `BENTO_PUBLISHABLE_KEY`
-   - **Bento Secret Key** → your `BENTO_SECRET_KEY`
-   - **Bento Site UUID** → your `BENTO_SITE_UUID`
-4. Click **Install**. Claude Desktop copies the bundle and remembers the credentials. The server now appears in the Tools list and can be toggled on/off like any other MCP integration.
+The local server provides `get_subscriber`, `batch_import_subscribers`, `list_tags`, `create_tag`, `list_fields`, `create_field`, `track_event`, `get_site_stats`, `get_ads_stats`, `list_broadcasts`, `create_broadcast`, `list_automations`, `list_workflows`, `get_workflow`, `get_workflow_stats`, `list_sequences`, `create_sequence_email`, `get_email_template`, `update_email_template`, and `update_sequence_email`.
 
-To ship an update, re-run `npm run build` (or `npm run bundle`) and repeat steps 2–4 (Claude Desktop will replace the previous bundle version automatically).
+## Differences from upstream
 
-## Usage with Claude Code
+The fork sends both SDK and direct HTTP requests to the configured API base URL, removes Bento's host allowlist, uses the exact `@bentonow/bento-node-sdk` 2.0.0 dependency, and changes setup, metadata, and the MCPB manifest to gupsh. Tool names, argument schemas, and response formatting remain upstream-compatible. The upstream source base is commit `212a9432433b3d6d55b85abcd7a89ac6f36ef788` (`@bentonow/bento-mcp` 1.3.3).
 
-Run this command to add the Bento MCP server to Claude Code:
-
-```bash
-claude mcp add bento --env BENTO_PUBLISHABLE_KEY=your-publishable-key --env BENTO_SECRET_KEY=your-secret-key --env BENTO_SITE_UUID=your-site-uuid -- npx -y @bentonow/bento-mcp
-```
-
-## Usage with OpenCode
-
-Add to your OpenCode config file (`~/.config/opencode/config.json`):
-
-```json
-{
-  "mcp": {
-    "bento": {
-      "type": "local",
-      "command": ["npx", "-y", "@bentonow/bento-mcp"],
-      "environment": {
-        "BENTO_PUBLISHABLE_KEY": "your-publishable-key",
-        "BENTO_SECRET_KEY": "your-secret-key",
-        "BENTO_SITE_UUID": "your-site-uuid"
-      }
-    }
-  }
-}
-```
-
-**Note:** OpenCode does not support referencing environment variables from a `.env` file. You must enter your actual credential values directly in the configuration file.
-
-## Usage with Cursor
-
-Add to your Cursor MCP settings (`~/.cursor/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "bento": {
-      "command": "npx",
-      "args": ["-y", "@bentonow/bento-mcp"],
-      "env": {
-        "BENTO_PUBLISHABLE_KEY": "your-publishable-key",
-        "BENTO_SECRET_KEY": "your-secret-key",
-        "BENTO_SITE_UUID": "your-site-uuid"
-      }
-    }
-  }
-}
-```
-
-**Note:** Cursor does not support referencing environment variables from a `.env` file. You must enter your actual credential values directly in the configuration file.
-
-## Available Tools
-
-### Subscribers
-
-| Tool | Description |
-|------|-------------|
-| `get_subscriber` | Look up subscriber details by email or UUID |
-| `batch_import_subscribers` | Import or update up to 1000 subscribers with custom fields and tags |
-
-### Tags
-
-| Tool | Description |
-|------|-------------|
-| `list_tags` | List all tags in your account |
-| `create_tag` | Create a new tag |
-
-### Fields
-
-| Tool | Description |
-|------|-------------|
-| `list_fields` | List all custom fields |
-| `create_field` | Create a new custom field |
-
-### Events
-
-| Tool | Description |
-|------|-------------|
-| `track_event` | Track a custom event for a subscriber (can trigger automations) |
-
-### Statistics
-
-| Tool | Description |
-|------|-------------|
-| `get_site_stats` | Get site statistics including subscriber and broadcast counts |
-| `get_ads_stats` | Get ads attribution stats by source, campaign, medium, content, or ad |
-
-### Broadcasts
-
-| Tool | Description |
-|------|-------------|
-| `list_broadcasts` | List all broadcasts/campaigns |
-| `create_broadcast` | Create a draft broadcast |
-
-### Automations
-
-| Tool | Description |
-|------|-------------|
-| `list_automations` | List sequences and/or workflows with their templates (supports separate pagination for each type) |
-| `list_workflows` | List workflows with their embedded email templates and stats |
-| `get_workflow` | Get a workflow's triggers, nodes, branches, and linked emails |
-| `get_workflow_stats` | Per-node entered, sent, opened, clicked, unsubscribe, and conversion stats for a workflow over a time window |
-
-### Sequences
-
-| Tool | Description |
-|------|-------------|
-| `list_sequences` | List all email sequences with their email templates (supports pagination) |
-| `create_sequence_email` | Create a new email template in a sequence (accepts sequence ID or exact name) with optional delay settings |
-| `update_sequence_email` | Update a sequence email template by template ID |
-
-### Email Templates
-
-| Tool | Description |
-|------|-------------|
-| `get_email_template` | Get email template content by ID |
-| `update_email_template` | Update email template subject and/or content |
-
-## Example Prompts
-
-Once configured, you can ask your AI assistant things like:
-
-- "Look up the subscriber john@example.com in Bento"
-- "Import these 5 subscribers with the 'newsletter' tag"
-- "Show me the site statistics from Bento"
-- "How many people came from YouTube last week?"
-- "How much did we earn from Meta last month?"
-- "How is the summer_2015 campaign doing?"
-- "What are all the tags in my Bento account?"
-- "Create a new broadcast for the spring sale"
-- "List all my email sequences"
-- "Show me my workflows and highlight the email templates"
-- "Show me my onboarding workflow and which emails in it get the most clicks"
-- "Create a welcome email in sequence abc123 that sends after 2 days"
-- "Add a follow-up email to my onboarding sequence with a 1 week delay"
-- "Track a 'feature_used' event for user@example.com"
-
-## Response Format
-
-All tool responses are formatted to be informative for both humans and LLMs:
-
-- **Success responses** include context about the operation performed and structured data
-- **Error responses** include the `isError` flag and helpful error messages with suggested fixes
-- **Empty results** are clearly indicated (e.g., "No items found")
-- **Batch operations** report both successful and total counts
-
-## Error Handling
-
-The server provides helpful error messages for common issues:
-
-- **Missing credentials**: Clear message about which environment variables are missing
-- **Authentication failures**: Guidance to check API keys
-- **Rate limiting**: Information about waiting before retrying
-- **Not found errors**: Clear indication when resources don't exist
-- **API errors**: Helpful messages for temporary service issues
-
-## Development
-
-```bash
-# Clone the repository
-git clone https://github.com/bentonow/bento-mcp.git
-cd bento-mcp
-
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Lint
-npm run lint
-
-# Format
-npm run format
-
-# Run locally
-BENTO_PUBLISHABLE_KEY=xxx BENTO_SECRET_KEY=xxx BENTO_SITE_UUID=xxx npm start
-```
-
-## MCP manifest & bundle
-
-- `manifest.json` declares the server name, entry point, tool roster, and required runtime per the MCP manifest specification so launchers can discover the server automatically.
-- Run `npm run sync:manifest` whenever the package version changes; it keeps `manifest.json`'s `version` field in sync with `package.json` so there's only one authoritative version number.
-- `npm run build` (and `npm run bundle`, which aliases it) validates bundle contents after packing and fails if blocked paths are present or required runtime files are missing.
-- `.mcpbignore` provides a strict allowlist so local docs/config files are excluded from release bundles.
-
-## License
-
-MIT - see [LICENSE](LICENSE)
-
-## Links
-
-- [Bento](https://bentonow.com) - Email marketing platform
-- [Bento Node SDK](https://github.com/bentonow/bento-node-sdk) - The underlying SDK
-- [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
+The source is MIT licensed; see [LICENSE](LICENSE) and [NOTICE](NOTICE).

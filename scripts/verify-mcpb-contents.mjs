@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
-const bundleArg = process.argv[2] || "bento-mcp.mcpb";
+const bundleArg = process.argv[2] || "gupsh-mcp.mcpb";
 const bundlePath = resolve(process.cwd(), bundleArg);
 
 if (!existsSync(bundlePath)) {

@@ -9,16 +9,17 @@ export interface Credentials {
   publishableKey: string;
   secretKey: string;
   siteUuid: string;
+  apiBaseUrl: string;
 }
 
 /**
- * Get the path to the Bento MCP environment file.
- * - macOS/Linux: ~/.bento/mcp/env
- * - Windows: %USERPROFILE%\.bento\mcp\env
+ * Get the path to the gupsh MCP environment file.
+ * - macOS/Linux: ~/.gupsh/mcp/env
+ * - Windows: %USERPROFILE%\.gupsh\mcp\env
  */
 export function getEnvFilePath(): string {
   const home = homedir();
-  return join(home, ".bento", "mcp", "env");
+  return join(home, ".gupsh", "mcp", "env");
 }
 
 /**
@@ -26,7 +27,7 @@ export function getEnvFilePath(): string {
  */
 export function getEnvDir(): string {
   const home = homedir();
-  return join(home, ".bento", "mcp");
+  return join(home, ".gupsh", "mcp");
 }
 
 /**
@@ -51,6 +52,7 @@ export async function saveCredentials(creds: Credentials): Promise<void> {
     `BENTO_PUBLISHABLE_KEY=${creds.publishableKey}`,
     `BENTO_SECRET_KEY=${creds.secretKey}`,
     `BENTO_SITE_UUID=${creds.siteUuid}`,
+    `BENTO_API_BASE_URL=${creds.apiBaseUrl}`,
     "", // trailing newline
   ];
   const content = lines.join(EOL);
@@ -84,6 +86,7 @@ export async function loadCredentials(): Promise<Credentials | null> {
     let publishableKey = "";
     let secretKey = "";
     let siteUuid = "";
+    let apiBaseUrl = "https://api.gupsh.app/api/v1";
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -93,11 +96,13 @@ export async function loadCredentials(): Promise<Credentials | null> {
         secretKey = trimmed.slice("BENTO_SECRET_KEY=".length);
       } else if (trimmed.startsWith("BENTO_SITE_UUID=")) {
         siteUuid = trimmed.slice("BENTO_SITE_UUID=".length);
+      } else if (trimmed.startsWith("BENTO_API_BASE_URL=")) {
+        apiBaseUrl = trimmed.slice("BENTO_API_BASE_URL=".length);
       }
     }
 
     if (publishableKey && secretKey && siteUuid) {
-      return { publishableKey, secretKey, siteUuid };
+      return { publishableKey, secretKey, siteUuid, apiBaseUrl };
     }
 
     return null;

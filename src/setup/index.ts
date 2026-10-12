@@ -12,7 +12,8 @@ import * as cursor from "./cursor.js";
 import * as opencode from "./opencode.js";
 import { printManualConfig, printConfigBlock } from "./manual.js";
 
-const BENTO_API_SETTINGS_URL = "https://app.bentonow.com/account/teams";
+const GUPSH_API_KEYS_URL = "https://app.gupsh.app/marketing/settings";
+const DEFAULT_BASE_URL = "https://api.gupsh.app/api/v1";
 
 type PromptOptions = {
   mask?: boolean;
@@ -258,17 +259,10 @@ export async function runSetup(options: SetupOptions = {}): Promise<void> {
   }
 
   console.log("");
-  console.log("     ██████╗ ███████╗███╗   ██╗████████╗ ██████╗ ");
-  console.log("     ██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗");
-  console.log("     ██████╔╝█████╗  ██╔██╗ ██║   ██║   ██║   ██║");
-  console.log("     ██╔══██╗██╔══╝  ██║╚██╗██║   ██║   ██║   ██║");
-  console.log("     ██████╔╝███████╗██║ ╚████║   ██║   ╚██████╔╝");
-  console.log("     ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ");
-  console.log("");
-  console.log("  MCP Server Setup");
+  console.log("  gupsh MCP Server Setup");
   console.log("");
   console.log(
-    "This wizard will help you configure Bento MCP for your AI assistant.",
+    "This wizard will help you configure gupsh MCP for your AI assistant.",
   );
   console.log("");
 
@@ -282,7 +276,10 @@ export async function runSetup(options: SetupOptions = {}): Promise<void> {
       publishableKey: envCreds.publishableKey || creds?.publishableKey || "",
       secretKey: envCreds.secretKey || creds?.secretKey || "",
       siteUuid: envCreds.siteUuid || creds?.siteUuid || "",
+      apiBaseUrl: process.env.GUPSH_API_BASE_URL || process.env.BENTO_API_BASE_URL || creds?.apiBaseUrl || DEFAULT_BASE_URL,
     };
+  } else if (creds) {
+    creds.apiBaseUrl = process.env.GUPSH_API_BASE_URL || process.env.BENTO_API_BASE_URL || creds.apiBaseUrl;
   }
 
   // Determine which clients to configure
@@ -322,18 +319,18 @@ export async function runSetup(options: SetupOptions = {}): Promise<void> {
     const rl = createRL();
 
     try {
-      console.log("You'll need your Bento API credentials.");
+      console.log("You'll need your gupsh API credentials.");
       console.log("");
 
       const openBrowser = await promptYesNo(
         rl,
-        "Open Bento API settings in your browser?",
+        "Open gupsh API settings in your browser?",
         true,
       );
 
       if (openBrowser) {
-        console.log(`\nOpening ${BENTO_API_SETTINGS_URL}...`);
-        await openUrl(BENTO_API_SETTINGS_URL);
+        console.log(`\nOpening ${GUPSH_API_KEYS_URL}...`);
+        await openUrl(GUPSH_API_KEYS_URL);
         console.log("");
       }
 
@@ -359,7 +356,8 @@ export async function runSetup(options: SetupOptions = {}): Promise<void> {
         creds?.siteUuid,
       );
 
-      creds = { publishableKey, secretKey, siteUuid };
+      const apiBaseUrl = (await prompt(rl, `API base URL [${creds?.apiBaseUrl || DEFAULT_BASE_URL}]: `)) || creds?.apiBaseUrl || DEFAULT_BASE_URL;
+      creds = { publishableKey, secretKey, siteUuid, apiBaseUrl };
 
       // Save credentials
       if (!dryRun) {
@@ -399,10 +397,10 @@ export async function runSetup(options: SetupOptions = {}): Promise<void> {
   console.log("\nNext steps:");
   console.log("  1. Restart your MCP client(s) to load the new configuration");
   console.log(
-    "  2. Ask your AI assistant to use a Bento tool (e.g., 'Get my Bento site stats')",
+    "  2. Ask your AI assistant to use a gupsh tool (e.g., 'Get my gupsh site stats')",
   );
   console.log(
-    "\nFor more information, see: https://github.com/bentonow/bento-mcp",
+    "\nFor more information, see: https://github.com/smashah/gupsh-mcp",
   );
   console.log("");
 }
@@ -411,15 +409,17 @@ export async function runSetup(options: SetupOptions = {}): Promise<void> {
  * Get credentials from environment variables.
  */
 function getCredentialsFromEnv(): Credentials | null {
-  const publishableKey = process.env.BENTO_PUBLISHABLE_KEY;
-  const secretKey = process.env.BENTO_SECRET_KEY;
-  const siteUuid = process.env.BENTO_SITE_UUID;
+  const publishableKey = process.env.GUPSH_PUBLISHABLE_KEY ?? process.env.BENTO_PUBLISHABLE_KEY;
+  const secretKey = process.env.GUPSH_SECRET_KEY ?? process.env.BENTO_SECRET_KEY;
+  const siteUuid = process.env.GUPSH_SITE_UUID ?? process.env.BENTO_SITE_UUID;
+  const apiBaseUrl = process.env.GUPSH_API_BASE_URL || process.env.BENTO_API_BASE_URL || DEFAULT_BASE_URL;
 
   if (publishableKey || secretKey || siteUuid) {
     return {
       publishableKey: publishableKey || "",
       secretKey: secretKey || "",
       siteUuid: siteUuid || "",
+      apiBaseUrl,
     };
   }
 
@@ -518,9 +518,9 @@ export function parseSetupArgs(args: string[]): SetupOptions {
  */
 function printSetupHelp(): void {
   console.log(`
-Bento MCP Setup
+gupsh MCP Setup
 
-Usage: bento-mcp setup [options]
+Usage: gupsh-mcp setup [options]
 
 Options:
   --client <name>    Configure a specific client:
@@ -533,10 +533,10 @@ Options:
   --help, -h         Show this help message
 
 Examples:
-  npx @bentonow/bento-mcp setup
-  npx @bentonow/bento-mcp setup --client claude-code
-  npx @bentonow/bento-mcp setup --client opencode
-  npx @bentonow/bento-mcp setup --all --yes
-  npx @bentonow/bento-mcp setup --dry-run
+  npx @gupsh/mcp setup
+  npx @gupsh/mcp setup --client claude-code
+  npx @gupsh/mcp setup --client opencode
+  npx @gupsh/mcp setup --all --yes
+  npx @gupsh/mcp setup --dry-run
 `);
 }

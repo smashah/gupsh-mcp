@@ -42,7 +42,7 @@ async function backupConfig(configPath: string): Promise<string | null> {
 }
 
 /**
- * Get the Bento MCP server configuration block for OpenCode.
+ * Get the gupsh MCP server configuration block for OpenCode.
  * OpenCode uses a different format than other MCP clients:
  * - Uses "mcp" instead of "mcpServers"
  * - Uses "type": "local"
@@ -56,11 +56,12 @@ export function getBentoConfig(
   if (writeSecrets) {
     return {
       type: "local",
-      command: ["npx", "-y", "@bentonow/bento-mcp"],
+      command: ["npx", "-y", "@gupsh/mcp"],
       environment: {
         BENTO_PUBLISHABLE_KEY: creds.publishableKey,
         BENTO_SECRET_KEY: creds.secretKey,
         BENTO_SITE_UUID: creds.siteUuid,
+        BENTO_API_BASE_URL: creds.apiBaseUrl,
       },
     };
   }
@@ -68,17 +69,18 @@ export function getBentoConfig(
   // Reference env vars
   return {
     type: "local",
-    command: ["npx", "-y", "@bentonow/bento-mcp"],
+    command: ["npx", "-y", "@gupsh/mcp"],
     environment: {
       BENTO_PUBLISHABLE_KEY: "${BENTO_PUBLISHABLE_KEY}",
       BENTO_SECRET_KEY: "${BENTO_SECRET_KEY}",
       BENTO_SITE_UUID: "${BENTO_SITE_UUID}",
+      BENTO_API_BASE_URL: "${BENTO_API_BASE_URL}",
     },
   };
 }
 
 /**
- * Configure Bento MCP for OpenCode by merging into the config file.
+ * Configure gupsh MCP for OpenCode by merging into the config file.
  */
 export async function configure(
   creds: Credentials,
@@ -92,7 +94,7 @@ export async function configure(
   if (dryRun) {
     console.log("\n[OpenCode] Would modify:");
     console.log(`  ${configPath}`);
-    console.log("\n  Adding mcp.bento:");
+    console.log("\n  Adding mcp.gupsh:");
     console.log(
       `  ${JSON.stringify(bentoConfig, null, 2).split("\n").join("\n  ")}`,
     );
@@ -130,7 +132,7 @@ export async function configure(
     if (!config.mcp) {
       config.mcp = {};
     }
-    (config.mcp as Record<string, unknown>).bento = bentoConfig;
+    (config.mcp as Record<string, unknown>).gupsh = bentoConfig;
 
     // Write back
     await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
@@ -158,7 +160,7 @@ export function getConfigBlock(creds: Credentials): string {
   return JSON.stringify(
     {
       mcp: {
-        bento: bentoConfig,
+        gupsh: bentoConfig,
       },
     },
     null,

@@ -7,7 +7,7 @@ import { Analytics } from "@bentonow/bento-node-sdk";
 import { createRequire } from "node:module";
 import { runSetup, parseSetupArgs } from "./setup/index.js";
 import { normalizeAutomationList } from "./automation-output.js";
-import { fetchBentoJson, getApiBaseUrl } from "./bento-fetch.js";
+import { cred, fetchBentoJson, getApiBaseUrl } from "./bento-fetch.js";
 import { resolveSequenceId } from "./sequence-resolution.js";
 import { workflowStatsQuery } from "./workflow-stats-query.js";
 
@@ -25,16 +25,16 @@ if (args[0] === "setup") {
     process.exit(1);
   });
 } else if (args[0] === "--version" || args[0] === "-v") {
-  console.log(`bento-mcp v${VERSION}`);
+  console.log(`gupsh-mcp v${VERSION}`);
   process.exit(0);
 } else if (args[0] === "--help" || args[0] === "-h") {
   console.log(`
-Bento MCP Server v${VERSION}
+Gupsh MCP Server v${VERSION}
 
-Usage: bento-mcp [command] [options]
+Usage: gupsh-mcp [command] [options]
 
 Commands:
-  setup     Configure Bento MCP for your AI assistant
+  setup     Configure gupsh MCP for your AI assistant
   (default) Start the MCP server
 
 Options:
@@ -42,10 +42,10 @@ Options:
   --help, -h     Show this help message
 
 Examples:
-  npx @bentonow/bento-mcp setup    # Run setup wizard
-  npx @bentonow/bento-mcp          # Start MCP server
+  npx @gupsh/mcp setup    # Run setup wizard
+  npx @gupsh/mcp          # Start MCP server
 
-For more information: https://github.com/bentonow/bento-mcp
+For more information: https://github.com/smashah/gupsh-mcp
 `);
   process.exit(0);
 } else {
@@ -60,9 +60,9 @@ function startMcpServer() {
 
   // Initialize Bento client from environment variables
   function getBentoClient(): Analytics {
-    const publishableKey = process.env.BENTO_PUBLISHABLE_KEY;
-    const secretKey = process.env.BENTO_SECRET_KEY;
-    const siteUuid = process.env.BENTO_SITE_UUID;
+    const publishableKey = cred("PUBLISHABLE_KEY");
+    const secretKey = cred("SECRET_KEY");
+    const siteUuid = cred("SITE_UUID");
 
     if (!publishableKey || !secretKey || !siteUuid) {
       throw new Error(
@@ -76,12 +76,13 @@ function startMcpServer() {
         secretKey,
       },
       siteUuid,
+      clientOptions: { baseUrl: getApiBaseUrl() },
     });
   }
 
   // Create MCP server
   const server = new McpServer({
-    name: "bento",
+    name: "gupsh",
     version: VERSION,
   });
 
@@ -607,9 +608,9 @@ Example purchase event details:
       return bento.V1.Stats.getAdsStats(parameters);
     }
 
-    const publishableKey = process.env.BENTO_PUBLISHABLE_KEY as string;
-    const secretKey = process.env.BENTO_SECRET_KEY as string;
-    const siteUuid = process.env.BENTO_SITE_UUID as string;
+    const publishableKey = cred("PUBLISHABLE_KEY") as string;
+    const secretKey = cred("SECRET_KEY") as string;
+    const siteUuid = cred("SITE_UUID") as string;
     const baseUrl = getApiBaseUrl();
     const authHeader = Buffer.from(`${publishableKey}:${secretKey}`).toString("base64");
     const queryParameters = new URLSearchParams({ site_uuid: siteUuid });
@@ -1125,9 +1126,9 @@ Returns signups, customers, revenue in cents, chart data, and a ranked breakdown
             `Created sequence email in ${resolvedSequenceId}`,
           );
         }
-        const publishableKey = process.env.BENTO_PUBLISHABLE_KEY as string;
-        const secretKey = process.env.BENTO_SECRET_KEY as string;
-        const siteUuid = process.env.BENTO_SITE_UUID as string;
+        const publishableKey = cred("PUBLISHABLE_KEY") as string;
+        const secretKey = cred("SECRET_KEY") as string;
+        const siteUuid = cred("SITE_UUID") as string;
         const baseUrl = getApiBaseUrl();
         const authHeader = Buffer.from(`${publishableKey}:${secretKey}`).toString("base64");
 
@@ -1288,7 +1289,7 @@ Returns signups, customers, revenue in cents, chart data, and a ranked breakdown
   async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error(`Bento MCP Server v${VERSION} running on stdio`);
+    console.error(`Gupsh MCP Server v${VERSION} running on stdio`);
   }
 
   // Graceful shutdown handling
